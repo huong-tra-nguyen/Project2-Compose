@@ -1,0 +1,40 @@
+version: '3'
+services:
+  dind:
+    container_name: dind
+    image: docker:dind
+    privileged: true
+    networks:
+      - jenkinsnet
+    volumes:
+      - docker-certs-ca:/certs/ca
+      - docker-certs-client:/certs/client
+      - jenkins-data:/var/jenkins_home
+
+  jenkins:
+    container_name: jenkins
+    image: jenkins/jenkins:lts-jdk11
+    networks:
+      - jenkinsnet
+    volumes:
+      - docker-certs-client:/certs/client:ro
+      - jenkins-data:/var/jenkins_home
+    environment:
+      - DOCKER_HOST=tcp://dind:2376
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_TLS_VERIFY=1
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    depends_on:
+      - dind
+
+networks:
+  jenkinsnet:
+    driver: bridge
+
+volumes:
+  docker-certs-ca:
+  docker-certs-client:
+  jenkins-data:
+
